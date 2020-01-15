@@ -1,72 +1,66 @@
-const express = require("express");
-const User = require("../models/user");
+///email, name, graduated, require name and email. give graduated a default value. 
+
+const mongoose = require("mongoose");
 const validator = require("validator");
-const router = new express.Router();
+const bcrypt = require("bcryptjs");
 
-router.post("/users", async (req, res) => {
-  try {
-    const user = new User(req.body);
-    await user.save();
-    res.send(user);
-  } catch (e) {
-    res.status(400).send(e);
-  }
-});
-
-router.get("/users", async (req, res) => {
-  try {
-    let users = await User.find({});
-    res.send(users);
-    console.log(users);
-  } catch (err) {
-    res.status(500).send(err);
-  }
-});
-router.get("/users/:id", async (req, res) => {
-  try {
-    let user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).send();
+const userScheme = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    email :{
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        validate(value){
+            if (!validator.isEmail(value)){
+                throw new Error("Email is invalid");
+            }
+        }
+    },
+    password:{
+        type:String,
+        required:true,
+        trim:true,
+        minLength: 6,
+        validate(value){
+            if(value.toLowerCase().includes("password")){
+                throw new Error('Password cannot "password"');
+            }
+        }
     }
-    res.send(user);
-  } catch (err) {
-    res.status(500).send(err);
-  }
-});
-
-router.delete("/users/:id", async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-
-    if (!user) {
-      return res.status(404).send();
+    graduated: {
+        type: Boolean,
+        default: false
     }
-    res.send(user);
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-router.patch("/users/:id", async (req, res) => {
-  const updates = Object.keys(req.body);
-  const allowedUpdates = ["name", "email"];
-  const isValidOperation = updates.every(update =>
-    allowedUpdates.includes(update)
-  );
-  if (!isValidOperation) {
-    res.status(400).send({ error: "Invalid Updates" });
-  }
-  try {
-    let user = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-    if (!user) {
-      return res.status(404).send();
-    }
-    res.send(user);
-  } catch (err) {
-    res.status(400).send(err);
-  }
 });
 
-module.exports = router;
+userSchema.pre("save", async function(next) {
+    const user = this;
+    if(user.isModified("password")) {
+        user.password = await bcrypt.hash(user.password, 7);
+    } 
+    next();
+});
+
+
+userSchema.statics.findByCredentials = async(email, password) => {
+    const user = await User.findOne({email});
+    if (!user){
+        throw new Error("unable to login");
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if(!match){
+        throw new Error("incorrect password");
+    }
+    return user;
+};
+//hwhen we send a post or patch request, then 
+
+const User = mongoose.model ("User", userSchema);
+
+module.exports = User;
