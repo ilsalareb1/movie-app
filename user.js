@@ -3,7 +3,7 @@ const User = require("../models/user");
 const validator = require("validator");
 const router = new express.Router();
 const jwt = require("jsonwebtoken");
-
+const auth = require("../middleware/auth");
 router.post("/users", async (req, res) => {
   try {
     const user = new User(req.body);
@@ -21,7 +21,8 @@ routers.post("/users/login", async(req, res) => {
       req.body.email,
       req.body.password
     );
-    res.send(user);
+    const user = await user.generateToken();
+    res.send({user,Token});
   }catch (e) {
     res.status(400).send(e);
   }
