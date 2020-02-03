@@ -25,7 +25,14 @@ router.post("/reviews", auth,async (req, res) => {
       res.status(500).send(error);
     }
   });
-  
+  router.get("reviews/me", auth, async (req,res) => {
+    try{
+      await req.user.populate("reviews").execPopulate();
+      res.send(req.user.reviews);
+    }catch(error){
+      res.send(error);
+    }
+  });
   router.get("/reviews/:id", async (req, res) => {
     try{
       let reviews = await Review.findById(req.params.id);
