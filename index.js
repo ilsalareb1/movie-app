@@ -3,6 +3,8 @@ const express = require ("express");
 require("./db/mongoose"); //ensures mongoose runs and connects to our database
 const app = express();
 const movieRouter = require("./routers/movies");
+const reviewRouter = require("./routers/reviews");
+const userRouter = require("./routers/user");
 app.use(express.json());
 app.use(movieRouter);
 app.listen(3000, () => {
@@ -37,5 +39,15 @@ const testFunction = async()=> {
   const data = jwt.verify(token, "obeysudo");
   console.log(data);
 };
-
 testFunction();
+
+const Review = require("./models/review");
+const User = require("./models/user");
+
+const main = async () => {
+  const user = await User.findById("5e35b1947cd59a237c51b9a2"); //change id to owner id//
+  await user.populate("reviews").execPopulate();
+  console.log(revews.user);
+}; 
+main();
+
