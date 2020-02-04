@@ -1,82 +1,131 @@
-///email, name, graduated, require name and email. give graduated a default value. 
+const express = require("express");
+const multer = require("multer");
+const auth = require("../middleware/auth");
+const User = require("../models/user");
+const router = new express.Router();
 
-const mongoose = require("mongoose");
-const validator = require("validator");
-const bcrypt = require("bcryptjs");
+router.post("/users", async (req, res) => {
+  try {
+    const user = new User(req.body);
+    await user.save();
+    const token = await user.generateToken(); //lowercase so that token is generated for ONLY this user
+    res.send({ user, token });
+  } catch (e) {
+    console.log(e);
+    res.status(400).send(e);
+  }
+});
+router.post("/users/login", async (req, res) => {
+  try {
+    const user = await User.findByCredentials(
+      req.body.email,
+      req.body.password
+    );
+    const token = await user.generateToken();
 
-const userScheme = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    email :{
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        validate(value){
-            if (!validator.isEmail(value)){
-                throw new Error("Email is invalid");
-            }
-        }
-    },
-    password:{
-        type:String,
-        required:true,
-        trim:true,
-        minLength: 6,
-        validate(value){
-            if(value.toLowerCase().includes("password")){
-                throw new Error('Password cannot "password"');
-            }
-        }
-    },
-    graduated: {
-        type: Boolean,
-        default: false
-    },
-    tokens : [
-        {
-            token: {
-                type:String,
-                required: true
-            }
-        }
-    ]
+    res.send({ user, token });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send(error);
+  }
+});
+router.post("/users/logout", auth, async (req, res) => {
+  //console.log(token.token);
+  try {
+    req.user.tokens = req.user.tokens.filter(token => {
+      console.log(token.token);
+      return token.token !== req.token;
+
+      //We ONLY return the tokens that do not match the bearer token
+    });
+    await req.user.save();
+    res.send();
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+router.get("/users", async (req, res) => {
+  try {
+    let users = await User.find({});
+    res.send(users);
+    console.log(users);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+router.get("/users/me", auth, async (req, res) => {
+  res.send(req.user);
+});
+router.get("/users/:id", async (req, res) => {
+  try {
+    let user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send();
+    }
+    res.send(user);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
-userSchema.methods.generateToken = async function() {
-    const user = this;
-    const token = jwt.sign({_id: user._id.toString()}, "obeysudo");
-    user.tokens = user.tokens.concat({taken});
-    await user.saver
-    return token;
-}
+router.delete("/users/:id", auth, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
 
-userSchema.pre("save", async function(next) {
-    const user = this;
-    if(user.isModified("password")) {
-        user.password = await bcrypt.hash(user.password, 7);
-    } 
-    next();
+    if (!user) {
+      return res.status(404).send();
+    }
+    res.send(user);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+router.patch("/users/:id", auth, async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["name", "email"];
+  const isValidOperation = updates.every(update =>
+    allowedUpdates.includes(update)
+  );
+  if (!isValidOperation) {
+    res.status(400).send({ error: "Invalid Updates" });
+  }
+  try {
+    let user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!user) {
+      return res.status(404).send();
+    }
+    res.send(user);
+  } catch (err) {
+    res.status(400).send(err);
+  }
 });
 
-
-userSchema.statics.findByCredentials = async(email, password) => {
-    const user = await User.findOne({email});
-    if (!user){
-        throw new Error("unable to login");
+const upload = multer({
+  dest: "profilePics",
+  limits: {
+    fileSize: 2000000
+  },
+  fileFilter(req, file, cb){
+    if(!file.originalname.match(/\.(jpg|jpeg|png)$/)){
+      return cb(new Error ("Please upload a jpg, jped or png file"));
     }
-    const isMatch = await bcrypt.compare(password, user.password);
+    cb(undefined, true);
+  }
+});
 
-    if(!match){
-        throw new Error("incorrect password");
+router.post(
+  "users/me/profilePic",
+  upload.single("ProfilePic"),
+  async (req, res) => {
+    try{
+      res.send("Upload Succesful!");
+    }catch(error){
+      res.send(error);
     }
-    return user;
-};
-//hwhen we send a post or patch request, then 
+  }
+);
 
-const User = mongoose.model ("User", userSchema);
-
-module.exports = User;
+module.exports = router;
