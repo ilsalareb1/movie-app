@@ -102,30 +102,32 @@ router.patch("/users/:id", auth, async (req, res) => {
     res.status(400).send(err);
   }
 });
-
-const upload = multer({
-  dest: "profilePics",
-  limits: {
-    fileSize: 2000000
-  },
-  fileFilter(req, file, cb){
-    if(!file.originalname.match(/\.(jpg|jpeg|png)$/)){
-      return cb(new Error ("Please upload a jpg, jped or png file"));
-    }
-    cb(undefined, true);
-  }
-});
-
 router.post(
   "users/me/profilePic",
+  auth, 
   upload.single("ProfilePic"),
   async (req, res) => {
     try{
+      req.user.profilePic = req.file.buffer;
+      await req.user.save();
       res.send("Upload Succesful!");
     }catch(error){
       res.send(error);
     }
   }
 );
+
+router.get("user/:id/profilePic", async (req, res) => {
+  try{
+    const user = await User.findById(req.params.id);
+    if(!user || !user.profilePic) {
+      throw new Error();
+    }
+    res.set("Content-Type", "image/jpg");
+    res.send(user.profilePic);
+  }catch(error){
+    res.status(404).send(error);
+  }
+});
 
 module.exports = router;

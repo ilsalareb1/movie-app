@@ -33,6 +33,25 @@ router.post("/reviews", auth,async (req, res) => {
       res.send(error);
     }
   });
+
+  router.get("reviews/me", auth, async(req, res) => {
+    try{
+      const limit = parseInt(req.query.limit);
+      const skip = parseInt(req.query.skip);
+      await req.user
+       .populate({
+         path: "reviews",
+         options: {
+          limit: parseInt(limit),
+          skip: parseInt(skip)
+          }
+        })
+      .execPopulate();
+    }catch(error){
+      res.send(error);
+    }
+  });
+    
   router.get("/reviews/:id", async (req, res) => {
     try{
       let reviews = await Review.findById(req.params.id);
@@ -41,6 +60,21 @@ router.post("/reviews", auth,async (req, res) => {
       res.status(500).send(error);
     }
   });
+
+  router.get("reviews/:id", async (req, res) => {
+    const movie = req.params.id;
+    const limit = parseInt(req.query.limit);
+    const skip = parseInt(req.query.skip);
+    const sort= parseInt(req.query.sort);
+    try{
+      let reviews = await Review.find({movie: movie}).skip(skip).limit(limit)
+      .sort({ createdAt: sort });
+      res.send(reviews);
+    } catch (error){
+      res.status(500).send(error);
+    }
+  });
+
   
   router.delete("/reviews/:id", auth, async (req, res)=>{
     try{
