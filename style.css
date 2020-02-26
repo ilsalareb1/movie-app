@@ -1,0 +1,82 @@
+.container{
+    background-color: black;
+    width: 100%;
+    max-width: 70%;
+    height: 100%;
+    position: absolute;
+    margin-left: 15%; 
+    margin-right: 15%;
+
+}
+
+.nav-bar{
+    position: relative;
+    width: auto;
+    height: 64px;
+    background-color: 3399FF ;
+}
+.image{
+    position: absolute;
+    margin-left: 50%;
+    margin-right: 0%;
+    width: 50%;   
+    height: 905px;
+    background-color: skyblue;
+    
+}
+
+.about{
+    position: absolute;
+    margin-right: 5%;
+    margin-left: 5%;
+    width: 40%;
+    height: 200px;
+    top: 726.75px;
+    border-radius: 12px;
+    background-color: 	#A9A9A9;
+}
+
+.branding-quote{
+    position: absolute;
+    margin-right: 5%;
+    margin-left: 5%;
+    width: 40%;
+    top: 126.75px;
+    height: 250px;
+    background-color: none;
+    font-size: 2rem;
+    text-align: left;
+    text-transform: capitalize;
+}
+
+p{
+    color: white;
+}
+
+.about-btn{
+    position: absolute;
+    bottom: 5%;
+    margin-left: 50%;
+    transform: translateX(-50%);
+    align-self: center;
+    padding: 12px 28px;
+    width: 60%;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 12px;
+    background-color: white;
+    color: black;
+    border: 2px solid black;
+}
+
+.button{
+    transition-duration: 0.4s;
+  }
+  
+  .about-btn:hover {
+    background-color: black;
+    color: white;
+  }
+
